@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 #from ..pycmech import pycmech
-input_path = './test_data/water.xyz'
+input_path = './test_data/some_atoms.xyz'
 chem_list = ['X','H','He','Li','Be','B','C','N','O','F','Ne','Na',
         'Mg','Al','Si','P','S','Cl','Ar','K','Ca','Sc','Ti','V',
         'Cr','Mn','Fe','Co','Ni','Cu','Zn','Ga','Ge','As','Se','Br',
