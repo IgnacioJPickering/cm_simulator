@@ -1,6 +1,6 @@
 import sys
 import numpy as np
-import pycmech
+from pycmech import *
 #from ..pycmech import pycmech
 input_path = './test_data/some_atoms.xyz'
 input_pathv = './test_data/some_atoms_with_velocs.xyz'

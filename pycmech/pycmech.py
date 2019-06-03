@@ -1,21 +1,21 @@
 import sys
 import numpy as np
 #from ..pycmech import pycmech
-input_path = './test_data/some_atoms.xyz'
-input_pathv = './test_data/some_atoms_with_velocs.xyz'
-input_pathvc = './test_data/some_atoms_with_velocs_corrupted.xyz'
-chem_list = ['X','H','He','Li','Be','B','C','N','O','F','Ne','Na',
-        'Mg','Al','Si','P','S','Cl','Ar','K','Ca','Sc','Ti','V',
-        'Cr','Mn','Fe','Co','Ni','Cu','Zn','Ga','Ge','As','Se','Br',
-        'Kr','Rb','Sr','Y','Zr','Nb','Mo','Tc','Ru','Rh','Pd','Ag',
-        'Cd','In','Sn','Sb','Te','I','Xe','Cs','Ba','La','Ce','Pr','Nd',
-        'Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb','Lu',
-        'Hf','Ta','W','Re','Os','Ir','Pt','Au','Hg','Tl','Pb','Bi','Po',
-        'At','Rn','Fr','Ra','Ac','Th','Pa','U','Np','Pu']
-mass_list = [0.,1.00811,4.002602,6.997,9.0121831,10.821,12.0116,
-        14.00728,15.99977,18.998403,20.1797]
-mass_dict = {znum:mass for znum,mass in enumerate(mass_list)}
-chem_dict = {key:value for value,key in enumerate(chem_list)}
+#input_path = './test_data/some_atoms.xyz'
+#input_pathv = './test_data/some_atoms_with_velocs.xyz'
+#input_pathvc = './test_data/some_atoms_with_velocs_corrupted.xyz'
+#chem_list = ['X','H','He','Li','Be','B','C','N','O','F','Ne','Na',
+#        'Mg','Al','Si','P','S','Cl','Ar','K','Ca','Sc','Ti','V',
+#        'Cr','Mn','Fe','Co','Ni','Cu','Zn','Ga','Ge','As','Se','Br',
+#        'Kr','Rb','Sr','Y','Zr','Nb','Mo','Tc','Ru','Rh','Pd','Ag',
+#        'Cd','In','Sn','Sb','Te','I','Xe','Cs','Ba','La','Ce','Pr','Nd',
+#        'Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb','Lu',
+#        'Hf','Ta','W','Re','Os','Ir','Pt','Au','Hg','Tl','Pb','Bi','Po',
+#        'At','Rn','Fr','Ra','Ac','Th','Pa','U','Np','Pu']
+#mass_list = [0.,1.00811,4.002602,6.997,9.0121831,10.821,12.0116,
+#        14.00728,15.99977,18.998403,20.1797]
+#mass_dict = {znum:mass for znum,mass in enumerate(mass_list)}
+#chem_dict = {key:value for value,key in enumerate(chem_list)}
 class ForceFields():
     def __init__(self,force_field):
         #Lennard jones
