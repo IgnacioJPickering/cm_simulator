@@ -4,7 +4,7 @@ import sys
 with open('README.md','r') as descfile:
     long_description = descfile.read()
 setup_attrs = {
-        'name': 'pychmech',
+        'name': 'pycmech',
         'version':'0.1.0',
         'description':'Simple molecular dynamics simulators for gases',
         'long_description':long_description,
