@@ -12,6 +12,7 @@ sig_argon = 3.4
 A_ar =  4*eps_argon*sig_argon**12
 B_ar =  4*eps_argon*sig_argon**6
 cut = 6.
+kbol = (1.38067852e-13*6.022e16)
 
 @pytest.mark.parametrize("var,expected",
         [(1,1.8897261246257702),(2,2*1.8897261246257702)])
@@ -34,8 +35,7 @@ def test_distance_matrix():
     d12 = cm.bohr2ang(9.635750380837594)
     d13 = cm.bohr2ang(13.886594274127395)
     d23 = cm.bohr2ang(4.628864759856902)
-    particles._calc_pairwise_dist()
-    dij = particles.pairwise
+    dij = particles._calc_pairwise_dist()
     assert np.allclose(
             np.array([[dii,d12,d13],[d12,dii,d23],[d13,d23,dii]]),dij,atol=1e-5,rtol=1e-8)
  
@@ -46,8 +46,8 @@ def test_lj_pairlist_wcutoff():
     d23 = cm.bohr2ang(4.628864759856902)
     lj = cm.LJPotential(A=A_ar,B=B_ar,rcut=cut)
     particles = cm.ParticleGroup.from_xyz(water_path,('constant',0.))
-    particles._calc_pairwise_dist()
-    pl =  lj._get_pairlist_wcutoff(particles.pairwise)
+    dij = particles._calc_pairwise_dist()
+    pl =  lj._get_pairlist_wcutoff(dij)
     assert np.allclose(np.array([d12,d23]),pl) 
 
 
@@ -57,8 +57,8 @@ def test_lj_pairlist_wcutoff_len():
     d23 = cm.bohr2ang(4.628864759856902)
     lj = cm.LJPotential(A=A_ar,B=B_ar,rcut=cut)
     particles = cm.ParticleGroup.from_xyz(water_path,('constant',0.))
-    particles._calc_pairwise_dist()
-    pl =  lj._get_pairlist_wcutoff(particles.pairwise)
+    dij = particles._calc_pairwise_dist()
+    pl =  lj._get_pairlist_wcutoff(dij)
     assert len(pl) == len([d12,d23])
 
 
@@ -70,7 +70,6 @@ def test_lj_calculator():
     v23 =  A_ar*d23**(-12)-B_ar*d23**(-6)
     particles = cm.ParticleGroup.from_xyz(water_path,('constant',0.))
     particles.attach_potential(cm.LJPotential(A=A_ar,B=B_ar,rcut=cut))
-    particles._calc_pairwise_dist()
     pot = particles.get_pot_energy()
     assert isclose(v12+v23,pot,rel_tol=1e-8,abs_tol=1e-8)
 
@@ -79,7 +78,6 @@ def test_temperature():
     particles = cm.ParticleGroup.from_xyz(h_path,('constant',1.))
     particles.attach_potential(cm.LJPotential(A=A_ar,B=B_ar,rcut=cut))
     temperature = particles.get_temperature()
-    kbol = (1.38067852e-13*6.022e16)
     an_temp = 1.5*1.00811*10/(3*kbol)
     assert isclose(temperature,an_temp,rel_tol=1e-3,abs_tol=1e-8)
 

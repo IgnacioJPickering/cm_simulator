@@ -12,6 +12,7 @@ chem_dict = {key:value for value,key in enumerate(['X','H','He','Li','Be','B',
     'Te','I','Xe','Cs','Ba','La','Ce','Pr','Nd','Pm','Sm','Eu','Gd','Tb','Dy',
     'Ho','Er','Tm','Yb','Lu','Hf','Ta','W','Re','Os','Ir','Pt','Au','Hg','Tl',
     'Pb','Bi','Po','At','Rn','Fr','Ra','Ac','Th','Pa','U','Np','Pu'])}
+genran = np.random.RandomState(12345678)
 kbol_si = 1.38067852e-13
 kbol = kbol_si*6.022e16
 #units to be used internally:
@@ -37,6 +38,32 @@ class ForceFields():
         # acertain range are calculated
         #-A*(-12*xi + 12*xj)/((xi - xj)**2 + (yi - yj)**2 + (zi - zj)**2)**7 + B*(-6*xi + 6*xj)/((xi - xj)**2 + (yi - yj)**2 + (zi - zj)**2)**4
         pass
+
+class VerletPropagator():
+    def __init__(del_t):
+        self.del_t = del_t
+
+
+    def _update_term(self,coords,masses):
+        return np.divide(self.ff(coords),masses)*(self.del_t**2)
+
+
+    def _propagate_coords_first_ts(coords,masses):
+        coords_np1 = coords + velocs*self.del_t + \
+            0.5*self._update_term(coords,masses)
+        return coord_np1
+
+
+    def _propagate_coords_after_first_ts(coords,coords_nm1,masses):
+        coords_np1 = 2*coords - coords_nm1 + self._update_term(coords,masses)
+        return coord_np1
+
+    def propagate(coords,coords_nm1,masses,time_step):
+        if time_step == 0:
+            return self._propagate_coordinates_first_ts(coords,masses)
+        else:
+            return self._propagate_coordinates_after_first_ts(
+                    coords,coords_nm1,masses)
 
 
 class LJPotential():
@@ -71,6 +98,16 @@ class LJPotential():
         sum_potential = np.sum(array_potential)
         return sum_potential
 
+    @staticmethod
+    def associated_ff(coords):
+        #this calculates the force given a matrix of coords
+        def _force(coords):
+            pass
+            #f = 
+        for j in range(coords.shape[0]):
+            #_force(coords[j,:]) = sum()
+            pass
+
 
 class ParticleGroup():
     def __init__(self,coords,velocs,masses,znumbers):
@@ -85,6 +122,7 @@ class ParticleGroup():
         self.initial_coordinates = coords
         self.initial_velocities = velocs
         self.coords = self.initial_coordinates
+        self.coords_nm1 = None
         self.velocs = self.initial_velocities
         self.znumbers = znumbers
         self.masses = masses
@@ -94,29 +132,37 @@ class ParticleGroup():
     def from_xyz(cls,input_path,velocities='xyz'):
         coordinates, znumbers = read_coordinates_from_xyz(input_path)
         masses = get_atomic_masses(znumbers)
-        if velocities != 'xyz':
+        if velocities != 'xyz' and velocities[0] != 'maxwell':
             distribution,spread = velocities
-            velocs = generate_velocities(coordinates,distribution,spread)
+            velocs = generate_velocities(coordinates,distribution,spread=spread)
+        elif velocities[0] == 'maxwell':
+            distribution,tt = velocities
+            velocs = generate_velocities(
+                    coordinates,distribution,target_temperature=tt,masses=masses)
         else:
             velocs = read_velocities_from_xyz(input_path)
         particle_group = cls(coordinates,velocs,masses,znumbers)
         return particle_group
 
-
-    def _calc_pairwise_dist(self):
+    def _calc_pairwise_diff(self):
         #shape coords is (N,3)
         ri = np.expand_dims(self.coords,axis=1)
         #shape ri is (N,1,3)
         rj = np.expand_dims(self.coords,axis=0)
         #shape rj is (1,N,3)
         #shape rij is (N,N,3)
+        #this may be slightly confusing, the way this matrix is defined
+        #the element rij[0,1,:] has in it coords[1,:]- coords[0,:]
         rij = ri-rj
+        return rij
+
+    def _calc_pairwise_dist(self):
         #the maximum allowed difference is 1e-10, if the difference is smaller
         #its set to that value to avoid underflows, since 1/dij is important
+        rij = self._calc_pairwise_diff()
         epsilon = 1e-10
         dij = np.maximum(np.sqrt(np.sum(np.square(rij),axis=-1)),epsilon)
-        self.pairwise = dij
-        #print(self.pairwise)
+        return dij
 
 
     def attach_potential(self,potential):
@@ -124,23 +170,26 @@ class ParticleGroup():
         #energies of the system
         self.potential = potential
 
+    def attach_propagator(self,propagator):
+        #I attach for instance the lennard jones potential to calculate the 
+        #energies of the system
+        self.propagator = propagator
+
 
     def set_force_field(self,force_field):
         self.ff = force_field
 
 
     def get_pot_energy(self):
-        #it is safer to call _calc_pairwise_dist() and uptdate the internal 
-        #state of self.pairwise each time you need it, however, it is 
-        #kind of dangerous to have a lot of internal state that has to 
-        #be uptadated
-        self._calc_pairwise_dist()
-        pot = self.potential.calculate(self.pairwise)
+        #the pairwise distance matrix is calculated each time it is needed, 
+        #it is not saved as an internal state (maybe it should, to be changed 
+        #later)
+        dij = self._calc_pairwise_dist()
+        pot = self.potential.calculate(dij)
         return pot
 
 
     def get_kin_energy(self):
-        #if the pairwise distance is not defined I define it
         vel_sq_vector = np.sum(np.square(self.velocs),axis=-1)
         kin = 0.5*np.matmul(self.masses,vel_sq_vector)
         return kin
@@ -153,8 +202,14 @@ class ParticleGroup():
         return temperature
 
 
-    def update_positions(self):
+    def update_positions(self,time_step):
         '''updates positions according to some algorithm'''
+        #get new coordinates
+        coords_np1 = self.propagator.propagate(
+                self.coords,self.coords_nm1,self.masses)
+        #update the coordinates
+        self.coords_nm1 = self.coords
+        self.coords = self.coords_np1
        
 
 def read_velocities_from_xyz(input_path):
@@ -251,14 +306,23 @@ def get_atomic_masses(znumbers):
     return np.array(masses)
 
 
-def generate_velocities(coordinates,distribution,spread):
-    #note that the atomic unit of velocity is a_0 x E_h / hbar = 
-    #bohr x hartree /hbar
+def generate_velocities(coordinates,distribution,spread=None,masses=None,
+        target_temperature=None):
+    #note that the unit of velocity we will use is angstrom/femtosecond
     if distribution == 'uniform':
-        velocities = np.random.uniform(
+        velocities = genran.uniform(
                 -spread/2,spread/2,coordinates.shape)
     if distribution == 'constant':
         velocities = np.full(coordinates.shape,spread,dtype=np.float)
+    if distribution == 'maxwell':
+        #this creates a maxwell velocity distribution at the target 
+        #temperature
+        variance = np.sqrt(np.divide(1,masses)*kbol*target_temperature)
+        velocities = []
+        for j in range(coordinates.shape[0]):
+            velocities.append(genran.normal(
+                loc=0.0,scale=variance[j],size=3))
+        velocities = np.array(velocities)
     return velocities
 
 
@@ -267,7 +331,6 @@ def generate_velocities(coordinates,distribution,spread):
 #
 #    accel_k = force_field(coord_k)/m
 #    coord_kp = 2*coord_k - coord_km + accel_k*(timestep**2)
-#    print(coord_kp)
 
 #the coordinates are obtained in bohr, everything is in atomic units
 

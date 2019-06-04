@@ -11,7 +11,6 @@ eps_argon = cm.joule2menergy(1.65e-21)
 sig_argon = 3.4
 A_argon =  4*eps_argon*sig_argon**12
 B_argon =  4*eps_argon*sig_argon**6
-print(A_argon,B_argon)
 rmin_argon = 2**(1/6.)*sig_argon
 
 lj = cm.LJPotential(A=A_argon,B=B_argon,rcut=8.)
