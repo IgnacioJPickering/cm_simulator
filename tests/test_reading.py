@@ -8,9 +8,10 @@ input_pathv = './test_data/some_atoms_with_velocs.xyz'
 input_pathvc = './test_data/some_atoms_with_velocs_corrupted.xyz'
 def test_coord_water():
     coordinates, znumbers = cm.read_coordinates_from_xyz(water_path)
-    assert np.allclose(coordinates, [[ 1.88972612,  0.0,  0.0 ], 
-        [ 1.88972612,  1.88972612,  9.44863062], 
-        [ 0.0,  3.77945225, 13.22808287]],rtol=1e-08,atol=1e-10)
+    assert np.allclose(coordinates, 
+            [[1.00,0.00,0.00],
+            [1.00,1.00,5.00],
+            [0.00,2.00,7.00]],rtol=1e-08,atol=1e-10)
 
 def test_znum_water():
     coordinates, znumbers = cm.read_coordinates_from_xyz(water_path)
