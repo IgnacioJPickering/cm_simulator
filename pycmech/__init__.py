@@ -12,6 +12,19 @@ chem_dict = {key:value for value,key in enumerate(['X','H','He','Li','Be','B',
     'Te','I','Xe','Cs','Ba','La','Ce','Pr','Nd','Pm','Sm','Eu','Gd','Tb','Dy',
     'Ho','Er','Tm','Yb','Lu','Hf','Ta','W','Re','Os','Ir','Pt','Au','Hg','Tl',
     'Pb','Bi','Po','At','Rn','Fr','Ra','Ac','Th','Pa','U','Np','Pu'])}
+kbol_si = 1.38067852e-13
+kbol = kbol_si*6.022e16
+#units to be used internally:
+#Distance: angstrom
+#Time: femtosecond
+#Mass: grams/mol
+#Charge: proton charge
+#Temperature: Kelvin 
+
+#Energy = g/mol * (ang/femto)**2
+
+#The output of "ready to read quantities" will be handled by a different
+#module altogether (and there will be an input of desired units)
 
 
 class ForceFields():
@@ -26,15 +39,37 @@ class ForceFields():
         pass
 
 
-class Potentials():
-    def __init__(self,potential):
+class LJPotential():
+    def __init__(self,A,B,rcut): 
+        self.A = A
+        self.B = B
+        self.rcut = rcut
         #if the Lennard-Jones/cut potential is 
         # 4eps( (sig/r)**12 - (sig/r)**6)  then the params are sig and eps
         # the alternate form is A/(r**12) - B/(r**6) in which case
         # A = 4eps sig**12 , B = 4 eps sig**6
 
 
-        pass
+    def _get_pairlist_wcutoff(self,diff_mx):
+        #this method calculates the coordinates for a given
+        #difference matrix
+        upper_displaced_triangle = np.mask_indices(diff_mx.shape[0],np.triu,1)
+        pair_list_wcutoff = diff_mx[upper_displaced_triangle]
+        pair_list_wcutoff = pair_list_wcutoff[pair_list_wcutoff < self.rcut]
+        return pair_list_wcutoff
+
+
+    def _lj_for_array(self,array):
+        repulsive_term =  np.power(array,-6)
+        attractive_term = np.power(repulsive_term,2)
+        return self.A*attractive_term - self.B*repulsive_term
+
+
+    def calculate(self,diff_mx):
+        pair_list_wcutoff = self._get_pairlist_wcutoff(diff_mx)
+        array_potential = self._lj_for_array(pair_list_wcutoff)
+        sum_potential = np.sum(array_potential)
+        return sum_potential
 
 
 class ParticleGroup():
@@ -49,6 +84,8 @@ class ParticleGroup():
             raise ValueError("Wrong input to ParticleGroup")
         self.initial_coordinates = coords
         self.initial_velocities = velocs
+        self.coords = self.initial_coordinates
+        self.velocs = self.initial_velocities
         self.znumbers = znumbers
         self.masses = masses
 
@@ -66,13 +103,58 @@ class ParticleGroup():
         return particle_group
 
 
+    def _calc_pairwise_dist(self):
+        #shape coords is (N,3)
+        ri = np.expand_dims(self.coords,axis=1)
+        #shape ri is (N,1,3)
+        rj = np.expand_dims(self.coords,axis=0)
+        #shape rj is (1,N,3)
+        #shape rij is (N,N,3)
+        rij = ri-rj
+        #the maximum allowed difference is 1e-10, if the difference is smaller
+        #its set to that value to avoid underflows, since 1/dij is important
+        epsilon = 1e-10
+        dij = np.maximum(np.sqrt(np.sum(np.square(rij),axis=-1)),epsilon)
+        self.pairwise = dij
+        #print(self.pairwise)
+
+
+    def attach_potential(self,potential):
+        #I attach for instance the lennard jones potential to calculate the 
+        #energies of the system
+        self.potential = potential
+
+
     def set_force_field(self,force_field):
         self.ff = force_field
 
 
+    def get_pot_energy(self):
+        #it is safer to call _calc_pairwise_dist() and uptdate the internal 
+        #state of self.pairwise each time you need it, however, it is 
+        #kind of dangerous to have a lot of internal state that has to 
+        #be uptadated
+        self._calc_pairwise_dist()
+        pot = self.potential.calculate(self.pairwise)
+        return pot
+
+
+    def get_kin_energy(self):
+        #if the pairwise distance is not defined I define it
+        vel_sq_vector = np.sum(np.square(self.velocs),axis=-1)
+        kin = 0.5*np.matmul(self.masses,vel_sq_vector)
+        return kin
+
+
+    def get_temperature(self):
+        #units of temperature assume kbar = 1
+        kin = self.get_kin_energy()
+        temperature = kin/(3*kbol)
+        return temperature
+
+
     def update_positions(self):
         '''updates positions according to some algorithm'''
-
        
 
 def read_velocities_from_xyz(input_path):
@@ -101,15 +183,42 @@ def parse_elinput(elinput):
             znumbers.append(znum)
     return np.array(znumbers)
 
+#def convert_units(x,initial,final):
+#    #I define menergy units to be the internal energy units of 
+#    internal_dict = {('angstrom','bohr'):1.88973,('angstrom','meter'):1e-10,
+#            ('menergy','joule'):,('femtosecond','second'):1e-15,} 
+
 
 def ang2bohr(x):
     return x/0.529177210903
 
+
+def bohr2ang(x):
+    return x*0.529177210903
+
+
 def meter2bohr(x):
     return ang2bohr(x*1e10)
 
-def joule2hartre(x):
+
+def bohr2meter(x):
+    return bohr2ang(x)*1e10
+
+
+def joule2hartree(x):
     return x*2.2937122782963e17
+
+
+def hartree2joule(x):
+    return x/2.2937122782963e17
+
+
+def hartree2kelvin(x):
+    return x/(2.2937122782963e17*1.380649e-23)
+
+
+def joule2menergy(x):
+    return x*6.022e16
 
 
 def read_coordinates_from_xyz(input_path):
@@ -125,7 +234,7 @@ def read_coordinates_from_xyz(input_path):
                 values = line.split()
                 elinput.append(values[0])
                 coordinates.append(
-                        [ang2bohr(float(x)) for x in values[1:4]])
+                        [float(x) for x in values[1:4]])
         coordinates = np.array(coordinates)
         znumbers = parse_elinput(elinput)
     return coordinates, znumbers
