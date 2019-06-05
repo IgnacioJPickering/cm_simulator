@@ -44,11 +44,17 @@ class VerletPropagator():
 
 
     def _propagate_coords_after_first_ts(self,coords,coords_nm1,masses,forces):
-        coords_np1 = 2*coords - coords_nm1 + self._update_term(coords,masses,forces)
+        coords_np1 = 2*coords - coords_nm1 + self._update_term(
+                coords,masses,forces)
         return coords_np1
 
 
-    def propagate(self,coords,coords_nm1,velocs,masses,time_step,forces):
+    def propagate(self,particles,time_step):
+        forces = particles.get_forces()
+        coords = particles.coords
+        coords_nm1 = particles.coords_nm1
+        velocs = particles.velocs
+        masses = particles.masses
         if time_step == 0:
             return self._propagate_coords_first_ts(coords,velocs,masses,forces)
         else:
@@ -128,7 +134,8 @@ class ParticleGroup():
         elif velocities[0] == 'maxwell':
             distribution,tt = velocities
             velocs = generate_velocities(
-                    coordinates,distribution,target_temperature=tt,masses=masses)
+                    coordinates,distribution,target_temperature=tt,
+                    masses=masses)
         else:
             velocs = read_velocities_from_xyz(input_path)
         particle_group = cls(coordinates,velocs,masses,znumbers)
@@ -235,9 +242,7 @@ class ParticleGroup():
     def update_positions(self,time_step):
         '''updates positions according to some algorithm'''
         #get new coordinates
-        forces = self.get_forces()
-        coords_np1 = self.propagator.propagate(
-                self.coords,self.coords_nm1,self.velocs,self.masses,time_step,forces)
+        coords_np1 = self.propagator.propagate(self,time_step)
         #update the coordinates
         self.coords_nm1 = self.coords
         self.coords = coords_np1

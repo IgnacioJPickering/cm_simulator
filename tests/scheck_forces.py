@@ -13,6 +13,7 @@ sig_argon = 3.4
 A_ar =  4*eps_argon*sig_argon**12
 B_ar =  4*eps_argon*sig_argon**6
 rmin_argon = 2**(1/6.)*sig_argon
+print(rmin_argon)
 cut = 8.
 lj = cm.LJPotential(A=A_ar,B=B_ar,rcut=8.)
 
