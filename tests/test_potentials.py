@@ -115,7 +115,7 @@ particles.coords[1,:] = [3.5,0.,0.]
 particles.attach_propagator(cm.VerletPropagator(0.1))
 print(particles.coords)
 for j in range(10):
-    particles.update_positions(j)
+    particles.update_coords_velocs(j)
     print(particles.coords)
 
 

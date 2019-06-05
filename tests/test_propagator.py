@@ -76,7 +76,7 @@ def test_propagate_first_ts():
     myforce = 12*A_ar/(4.**13)-6*B_ar/(4.**7)
     upterm = (myforce/ar_mass)*ts**2
     new_coord = 4. + 0.5*upterm
-    particles.update_positions(0)
+    particles.update_coords_velocs(0)
     assert isclose(new_coord,particles.coords[1][0],rel_tol=1e-8,abs_tol=1e-8)
 
 def test_propagate_second_ts():
@@ -91,8 +91,8 @@ def test_propagate_second_ts():
     myforce = 12*A_ar/(new_coord**13)-6*B_ar/(new_coord**7)
     upterm = (myforce/ar_mass)*ts**2
     new_coord = 2*new_coord - 4. + upterm
-    particles.update_positions(0)
-    particles.update_positions(1)
+    particles.update_coords_velocs(0)
+    particles.update_coords_velocs(1)
     assert isclose(new_coord,particles.coords[1][0],rel_tol=1e-8,abs_tol=1e-8)
 
 def test_propagate_third_ts():
@@ -112,9 +112,9 @@ def test_propagate_third_ts():
     myforce = 12*A_ar/(new_coord**13)-6*B_ar/(new_coord**7)
     upterm = (myforce/ar_mass)*ts**2
     new_coord = 2*new_coord - new_coord1 + upterm
-    particles.update_positions(0)
-    particles.update_positions(1)
-    particles.update_positions(2)
+    particles.update_coords_velocs(0)
+    particles.update_coords_velocs(1)
+    particles.update_coords_velocs(2)
     assert isclose(new_coord,particles.coords[1][0],rel_tol=1e-8,abs_tol=1e-8)
 
 

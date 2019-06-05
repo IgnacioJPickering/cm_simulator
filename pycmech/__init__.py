@@ -40,13 +40,15 @@ class VerletPropagator():
     def _propagate_coords_first_ts(self,coords,velocs,masses,forces):
         coords_np1 = coords + velocs*self.del_t + \
             0.5*self._update_term(coords,masses,forces)
-        return coords_np1
+        velocs_np1 = (coords_np1-coords)*(1/self.del_t)
+        return coords_np1, velocs_np1
 
 
     def _propagate_coords_after_first_ts(self,coords,coords_nm1,masses,forces):
         coords_np1 = 2*coords - coords_nm1 + self._update_term(
                 coords,masses,forces)
-        return coords_np1
+        velocs_np1 = (coords_np1-coords)*(1/self.del_t)
+        return coords_np1, velocs_np1
 
 
     def propagate(self,particles,time_step):
@@ -239,13 +241,14 @@ class ParticleGroup():
         return temperature
 
 
-    def update_positions(self,time_step):
+    def update_coords_velocs(self,time_step):
         '''updates positions according to some algorithm'''
         #get new coordinates
-        coords_np1 = self.propagator.propagate(self,time_step)
+        coords_np1, velocs_np1 = self.propagator.propagate(self,time_step)
         #update the coordinates
         self.coords_nm1 = self.coords
         self.coords = coords_np1
+        self.velocs = velocs_np1
        
 
 def read_velocities_from_xyz(input_path):
