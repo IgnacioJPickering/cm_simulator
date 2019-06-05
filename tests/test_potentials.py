@@ -97,5 +97,12 @@ particles.attach_potential(cm.LJPotential(A=A_ar,B=B_ar,rcut=cut))
 pot = particles.get_pot_energy()
 kin = particles.get_kin_energy()
 temperature = particles.get_temperature()
+
+
+particles = cm.ParticleGroup.from_xyz(h_path,('constant',1.))
+particles.attach_potential(cm.LJPotential(A=A_ar,B=B_ar,rcut=cut))
+particles.get_forces()
+
+
 #print(cm.hartree2kelvin(temperature))
 #print(pot,kin,temperature)

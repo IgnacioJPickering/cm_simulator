@@ -48,7 +48,7 @@ class VerletPropagator():
         return np.divide(self.ff(coords),masses)*(self.del_t**2)
 
 
-    def _propagate_coords_first_ts(coords,masses):
+    def _propagate_coords_first_ts(coords,velocs,masses):
         coords_np1 = coords + velocs*self.del_t + \
             0.5*self._update_term(coords,masses)
         return coord_np1
@@ -58,9 +58,10 @@ class VerletPropagator():
         coords_np1 = 2*coords - coords_nm1 + self._update_term(coords,masses)
         return coord_np1
 
-    def propagate(coords,coords_nm1,masses,time_step):
+
+    def propagate(coords,coords_nm1,velocs,masses,time_step):
         if time_step == 0:
-            return self._propagate_coordinates_first_ts(coords,masses)
+            return self._propagate_coordinates_first_ts(coords,velocs,masses)
         else:
             return self._propagate_coordinates_after_first_ts(
                     coords,coords_nm1,masses)
@@ -144,6 +145,7 @@ class ParticleGroup():
         particle_group = cls(coordinates,velocs,masses,znumbers)
         return particle_group
 
+
     def _calc_pairwise_diff(self):
         #shape coords is (N,3)
         ri = np.expand_dims(self.coords,axis=1)
@@ -155,6 +157,7 @@ class ParticleGroup():
         #the element rij[0,1,:] has in it coords[1,:]- coords[0,:]
         rij = ri-rj
         return rij
+
 
     def _calc_pairwise_dist(self):
         #the maximum allowed difference is 1e-10, if the difference is smaller
@@ -169,6 +172,8 @@ class ParticleGroup():
         #I attach for instance the lennard jones potential to calculate the 
         #energies of the system
         self.potential = potential
+        self.rcut = self.potential.rcut
+
 
     def attach_propagator(self,propagator):
         #I attach for instance the lennard jones potential to calculate the 
@@ -178,6 +183,31 @@ class ParticleGroup():
 
     def set_force_field(self,force_field):
         self.ff = force_field
+
+    def _build_neigh_list(self):
+        dij = self._calc_pairwise_dist()
+        neigh_matrix = np.asarray(dij < self.rcut)
+        #I will build a neighbohr list
+        #A neighbohr list is a list of length N, where N is the number of 
+        #particles
+        #in the nth position my list will have a numpy array with the indices
+        #of the Rn neighbohrs of the nth atom.
+        neigh_list = []
+        for atom in range(dij.shape[0]):
+            #the neigh_list is appended the nonzero spots of the matrix that 
+            #says whether an atom is a neighbohr or not
+            #I extract "itself" from the neighbohr list 
+            #(each atom is not its own 
+            #neighbohr
+            atomic_neigh =  np.nonzero(neigh_matrix[atom,:].astype(bool))[0]
+            atomic_neigh = atomic_neigh[atomic_neigh != atom]
+            neigh_list.append(atomic_neigh)
+        return neigh_list
+
+
+    def get_forces(self):
+        neigh_list = self._build_neigh_list()
+        print(neigh_list)
 
 
     def get_pot_energy(self):
@@ -206,7 +236,7 @@ class ParticleGroup():
         '''updates positions according to some algorithm'''
         #get new coordinates
         coords_np1 = self.propagator.propagate(
-                self.coords,self.coords_nm1,self.masses)
+                self.coords,self.coords_nm1,self.velocs,self.masses)
         #update the coordinates
         self.coords_nm1 = self.coords
         self.coords = self.coords_np1
@@ -237,43 +267,6 @@ def parse_elinput(elinput):
         else:
             znumbers.append(znum)
     return np.array(znumbers)
-
-#def convert_units(x,initial,final):
-#    #I define menergy units to be the internal energy units of 
-#    internal_dict = {('angstrom','bohr'):1.88973,('angstrom','meter'):1e-10,
-#            ('menergy','joule'):,('femtosecond','second'):1e-15,} 
-
-
-def ang2bohr(x):
-    return x/0.529177210903
-
-
-def bohr2ang(x):
-    return x*0.529177210903
-
-
-def meter2bohr(x):
-    return ang2bohr(x*1e10)
-
-
-def bohr2meter(x):
-    return bohr2ang(x)*1e10
-
-
-def joule2hartree(x):
-    return x*2.2937122782963e17
-
-
-def hartree2joule(x):
-    return x/2.2937122782963e17
-
-
-def hartree2kelvin(x):
-    return x/(2.2937122782963e17*1.380649e-23)
-
-
-def joule2menergy(x):
-    return x*6.022e16
 
 
 def read_coordinates_from_xyz(input_path):
@@ -325,6 +318,41 @@ def generate_velocities(coordinates,distribution,spread=None,masses=None,
         velocities = np.array(velocities)
     return velocities
 
+#def convert_units(x,initial,final):
+#    #I define menergy units to be the internal energy units of 
+#    internal_dict = {('angstrom','bohr'):1.88973,('angstrom','meter'):1e-10,
+#            ('menergy','joule'):,('femtosecond','second'):1e-15,} 
+
+def ang2bohr(x):
+    return x/0.529177210903
+
+
+def bohr2ang(x):
+    return x*0.529177210903
+
+
+def meter2bohr(x):
+    return ang2bohr(x*1e10)
+
+
+def bohr2meter(x):
+    return bohr2ang(x)*1e10
+
+
+def joule2hartree(x):
+    return x*2.2937122782963e17
+
+
+def hartree2joule(x):
+    return x/2.2937122782963e17
+
+
+def hartree2kelvin(x):
+    return x/(2.2937122782963e17*1.380649e-23)
+
+
+def joule2menergy(x):
+    return x*6.022e16
 
 #def run_verlet(coordinates,force_field,timestep,max_timesteps):
 #
