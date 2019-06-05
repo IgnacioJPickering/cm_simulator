@@ -29,43 +29,31 @@ kbol = kbol_si*6.022e16
 #module altogether (and there will be an input of desired units)
 
 
-class ForceFields():
-    def __init__(self,force_field):
-        #Lennard jones
-        #the lennard jones should only be calculated for r < r_c (lennard jones 
-        #is by default
-        #Lennard-Jones/cut
-        #first a distance matrix has to be built and then interactions within 
-        # acertain range are calculated
-        #-A*(-12*xi + 12*xj)/((xi - xj)**2 + (yi - yj)**2 + (zi - zj)**2)**7 + B*(-6*xi + 6*xj)/((xi - xj)**2 + (yi - yj)**2 + (zi - zj)**2)**4
-        pass
-
 class VerletPropagator():
-    def __init__(del_t):
+    def __init__(self,del_t):
         self.del_t = del_t
 
+    def _update_term(self,coords,masses,forces):
+        return np.divide(forces,masses[:,np.newaxis])*(self.del_t**2)
 
-    def _update_term(self,coords,masses):
-        return np.divide(self.ff(coords),masses)*(self.del_t**2)
 
-
-    def _propagate_coords_first_ts(coords,velocs,masses):
+    def _propagate_coords_first_ts(self,coords,velocs,masses,forces):
         coords_np1 = coords + velocs*self.del_t + \
-            0.5*self._update_term(coords,masses)
-        return coord_np1
+            0.5*self._update_term(coords,masses,forces)
+        return coords_np1
 
 
-    def _propagate_coords_after_first_ts(coords,coords_nm1,masses):
-        coords_np1 = 2*coords - coords_nm1 + self._update_term(coords,masses)
-        return coord_np1
+    def _propagate_coords_after_first_ts(self,coords,coords_nm1,masses,forces):
+        coords_np1 = 2*coords - coords_nm1 + self._update_term(coords,masses,forces)
+        return coords_np1
 
 
-    def propagate(coords,coords_nm1,velocs,masses,time_step):
+    def propagate(self,coords,coords_nm1,velocs,masses,time_step,forces):
         if time_step == 0:
-            return self._propagate_coordinates_first_ts(coords,velocs,masses)
+            return self._propagate_coords_first_ts(coords,velocs,masses,forces)
         else:
-            return self._propagate_coordinates_after_first_ts(
-                    coords,coords_nm1,masses)
+            return self._propagate_coords_after_first_ts(
+                    coords,coords_nm1,masses,forces)
 
 
 class LJPotential():
@@ -247,11 +235,12 @@ class ParticleGroup():
     def update_positions(self,time_step):
         '''updates positions according to some algorithm'''
         #get new coordinates
+        forces = self.get_forces()
         coords_np1 = self.propagator.propagate(
-                self.coords,self.coords_nm1,self.velocs,self.masses)
+                self.coords,self.coords_nm1,self.velocs,self.masses,time_step,forces)
         #update the coordinates
         self.coords_nm1 = self.coords
-        self.coords = self.coords_np1
+        self.coords = coords_np1
        
 
 def read_velocities_from_xyz(input_path):

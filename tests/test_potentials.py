@@ -100,19 +100,23 @@ kin = particles.get_kin_energy()
 temperature = particles.get_temperature()
 
 
-particles = cm.ParticleGroup.from_xyz(ar_path,('constant',1.))
+particles = cm.ParticleGroup.from_xyz(ar_path,('constant',0.))
 particles.attach_potential(cm.LJPotential(A=A_ar,B=B_ar,rcut=cut))
-print(particles.get_forces())
+#print(particles.get_forces())
 particles.coords[1,:] = [5.,0.,0.]
-print(particles.get_forces())
+#print(particles.get_forces())
 particles.coords[1,:] = [5.9,0.,0.]
-print(particles.get_forces())
+#print(particles.get_forces())
 particles.coords[1,:] = [3.,0.,0.]
-print(particles.get_forces())
+#print(particles.get_forces())
 particles.coords[1,:] = [3.5*2**(1/6),0.,0.]
-print(particles.get_forces())
-particles.coords[1,:] = [0.1,0.,0.]
-print(particles.get_forces())
+#print(particles.get_forces())
+particles.coords[1,:] = [3.5,0.,0.]
+particles.attach_propagator(cm.VerletPropagator(0.1))
+print(particles.coords)
+for j in range(10):
+    particles.update_positions(j)
+    print(particles.coords)
 
 
 #print(cm.hartree2kelvin(temperature))
