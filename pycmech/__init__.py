@@ -4,7 +4,8 @@ import numpy as np
 #input_pathv = './test_data/some_atoms_with_velocs.xyz'
 #input_pathvc = './test_data/some_atoms_with_velocs_corrupted.xyz'
 mass_dict = {znum:mass for znum,mass in enumerate([0.,1.00811,4.002602,6.997,
-    9.0121831,10.821,12.0116,14.00728,15.99977,18.998403,20.1797])}
+    9.0121831,10.821,12.0116,14.00728,15.99977,18.998403,20.1797,22.990,24.305,
+    26.982,28.085,30.974,32.06,35.45,39.948])}
 chem_dict = {key:value for value,key in enumerate(['X','H','He','Li','Be','B',
     'C','N','O','F','Ne','Na','Mg','Al','Si','P','S','Cl','Ar','K','Ca','Sc',
     'Ti','V','Cr','Mn','Fe','Co','Ni','Cu','Zn','Ga','Ge','As','Se','Br','Kr',
@@ -99,15 +100,15 @@ class LJPotential():
         sum_potential = np.sum(array_potential)
         return sum_potential
 
-    @staticmethod
-    def associated_ff(coords):
-        #this calculates the force given a matrix of coords
-        def _force(coords):
-            pass
-            #f = 
-        for j in range(coords.shape[0]):
-            #_force(coords[j,:]) = sum()
-            pass
+    def ff(self,d_vec,r_vec):
+        #the force field calculates the total force over 1 particle
+        #given a vector of differences and a vector of distances
+        #of the neighbohrs
+        A = self.A
+        B = self.B
+        scalar_force = np.divide(12*A,d_vec**14) - np.divide(6*B,d_vec**8)
+        vector_force = scalar_force[:,np.newaxis]*r_vec
+        return vector_force
 
 
 class ParticleGroup():
@@ -181,9 +182,6 @@ class ParticleGroup():
         self.propagator = propagator
 
 
-    def set_force_field(self,force_field):
-        self.ff = force_field
-
     def _build_neigh_list(self):
         dij = self._calc_pairwise_dist()
         neigh_matrix = np.asarray(dij < self.rcut)
@@ -206,8 +204,22 @@ class ParticleGroup():
 
 
     def get_forces(self):
+        d_mat = self._calc_pairwise_dist()
+        r_mat = self._calc_pairwise_diff()
         neigh_list = self._build_neigh_list()
-        print(neigh_list)
+        forces = []
+        for i,idx_list in enumerate(neigh_list):
+            neigh_dist = d_mat[i,idx_list]
+            neigh_diff = r_mat[i,idx_list,:]
+            neigh_force = self.potential.ff(neigh_dist,neigh_diff)
+            forces.append(np.sum(neigh_force,axis=0))
+            #these functions are probably handy for debugging
+            #print(i, neigh_dist)
+            #print(i, neigh_diff)
+            #print(i, neigh_force)
+        forces = np.array(forces)
+        return forces
+        #print(neigh_list)
 
 
     def get_pot_energy(self):

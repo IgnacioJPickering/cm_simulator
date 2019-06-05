@@ -5,6 +5,7 @@ import pytest
 import matplotlib.pyplot as plt
 from math import isclose
 
+ar_path =  './test_data/argon_for_forces.xyz'
 water_path =  './test_data/water.xyz'
 h_path =  './test_data/atomic_h.xyz'
 eps_argon = cm.joule2menergy(1.65e-21)
@@ -99,9 +100,19 @@ kin = particles.get_kin_energy()
 temperature = particles.get_temperature()
 
 
-particles = cm.ParticleGroup.from_xyz(h_path,('constant',1.))
+particles = cm.ParticleGroup.from_xyz(ar_path,('constant',1.))
 particles.attach_potential(cm.LJPotential(A=A_ar,B=B_ar,rcut=cut))
-particles.get_forces()
+print(particles.get_forces())
+particles.coords[1,:] = [5.,0.,0.]
+print(particles.get_forces())
+particles.coords[1,:] = [5.9,0.,0.]
+print(particles.get_forces())
+particles.coords[1,:] = [3.,0.,0.]
+print(particles.get_forces())
+particles.coords[1,:] = [3.5*2**(1/6),0.,0.]
+print(particles.get_forces())
+particles.coords[1,:] = [0.1,0.,0.]
+print(particles.get_forces())
 
 
 #print(cm.hartree2kelvin(temperature))
