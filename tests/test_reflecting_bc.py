@@ -120,14 +120,32 @@ def test_propagate_third_ts():
     particles.update_coords_velocs(2)
     assert isclose(new_coord,particles.coords[1][0],rel_tol=1e-8,abs_tol=1e-8)
 
+#particles = cm.ParticleGroup.from_xyz(reflecting_path,('constant',0.))
+#particles.coords = np.random.uniform(-9.,9.,(100,3))
+#particles.attach_potential(cm.LJPotential(A=A_ar,B=B_ar,rcut=cut))
+#particles.attach_propagator(cm.VerletPropagator(5.))
+#particles.attach_box(-10.,10.,-10.,10.,-10.,10.)
+#for j in range(10000):
+#    particles.update_coords_velocs(j,'reflecting_fake')
+#    with open("output_test.xyz","a") as myfile:
+#        myfile.write('100\n') 
+#        myfile.write(f'timestep {j}\n') 
+#        for n in range(particles.coords.shape[0]):
+#            x = particles.coords[n,0] 
+#            y = particles.coords[n,1]
+#            z = particles.coords[n,2]
+#            myfile.write(f'Ar {x} {y} {z} \n')
+
+##############################
+
 particles = cm.ParticleGroup.from_xyz(reflecting_path,('constant',0.))
 particles.coords = np.random.uniform(-9.,9.,(100,3))
 particles.attach_potential(cm.LJPotential(A=A_ar,B=B_ar,rcut=cut))
-particles.attach_propagator(cm.VerletPropagator(5.))
+particles.attach_propagator(cm.VelVerletPropagator(5.))
 particles.attach_box(-10.,10.,-10.,10.,-10.,10.)
-for j in range(10000):
-    particles.update_coords_velocs(j,'reflecting_fake')
-    with open("output_test.xyz","a") as myfile:
+for j in range(1000):
+    particles.update_coords_velocs(j,'reflecting_velverlet')
+    with open("output_velver.xyz","a") as myfile:
         myfile.write('100\n') 
         myfile.write(f'timestep {j}\n') 
         for n in range(particles.coords.shape[0]):

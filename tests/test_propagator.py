@@ -117,4 +117,16 @@ def test_propagate_third_ts():
     particles.update_coords_velocs(2)
     assert isclose(new_coord,particles.coords[1][0],rel_tol=1e-8,abs_tol=1e-8)
 
+particles = cm.ParticleGroup.from_xyz(ar_path,('constant',0.))
+particles.attach_potential(cm.LJPotential(A=A_ar,B=B_ar,rcut=cut))
+particles.coords[1,:] = [4.,0.,0.]
+particles.attach_propagator(cm.VelVerletPropagator(5.))
+print(particles.coords)
+print(particles.velocs)
+particles.update_coords_velocs(0)
+print(particles.coords)
+print(particles.velocs)
+particles.update_coords_velocs(1)
+print(particles.coords)
+print(particles.velocs)
 

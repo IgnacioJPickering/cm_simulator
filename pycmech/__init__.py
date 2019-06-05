@@ -27,6 +27,33 @@ kbol = kbol_si*6.022e16
 
 #The output of "ready to read quantities" will be handled by a different
 #module altogether (and there will be an input of desired units)
+class VelVerletPropagator():
+    #velocities are calculated as deltax/deltat (order del_t), Stormer-Verlet
+    #this is done for simplicity
+    def __init__(self,del_t):
+        self.del_t = del_t
+
+
+    def _update_term(self,masses,forces):
+        return np.divide(forces,masses[:,np.newaxis])
+
+
+    def propagate(self,particles,time_step):
+        forces = particles.get_forces()
+        coords = particles.coords
+        coords_nm1 = particles.coords_nm1
+        masses = particles.masses
+        velocs = particles.velocs
+
+        coords_np1 = coords + velocs*self.del_t + \
+            0.5*self._update_term(masses,forces)*self.del_t**2
+        particles.coords = coords_np1
+
+        forces_np1 = particles.get_forces()
+        velocs_np1 = velocs + \
+            0.5*(self._update_term(masses,forces) + 
+            self._update_term(masses,forces_np1))*self.del_t
+        return coords_np1, velocs_np1
 
 
 class VerletPropagator():
@@ -304,6 +331,20 @@ class ParticleGroup():
                     self.coords[gt_indices[j],j] = self.box.hi[j]-0.2
                 if exist_oob_lt[j]:
                     self.coords[lt_indices[j],j] = self.box.lo[j]+0.2
+
+        if boundary_conditions == 'reflecting_velverlet':
+            gt_indices = get_gt_indices(self.coords,self.box.hi)
+            lt_indices = get_lt_indices(self.coords,self.box.lo)
+            exist_oob_gt = exist_oob(gt_indices)
+            exist_oob_lt = exist_oob(lt_indices)
+            box_eps = 1e-2
+            for j in range(3):
+                if exist_oob_gt[j]:
+                    self.coords[gt_indices[j],j] = self.box.hi[j] 
+                    self.velocs[gt_indices[j],j] *= -1
+                if exist_oob_lt[j]:
+                    self.coords[lt_indices[j],j] = self.box.lo[j] 
+                    self.velocs[lt_indices[j],j] *= -1
 
 
 
