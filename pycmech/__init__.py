@@ -27,6 +27,28 @@ kbol = kbol_si*6.022e16
 
 #The output of "ready to read quantities" will be handled by a different
 #module altogether (and there will be an input of desired units)
+class SteepestDescentPropagator():
+    #velocities are calculated as deltax/deltat (order del_t), Stormer-Verlet
+    #this is done for simplicity
+    #line search is not implemented, the descent rate is fixed
+    def __init__(self,del_t):
+        self.del_t = del_t
+
+
+    def _update_term(self,masses,forces):
+        return np.divide(forces,masses[:,np.newaxis])
+
+
+    def propagate(self,particles,time_step):
+        forces = particles.get_forces()
+        coords = particles.coords
+        masses = particles.masses
+        velocs = particles.velocs
+        coords_np1 = coords + self._update_term(masses,forces)*self.del_t
+        velocs_np1 = velocs
+        return coords_np1, velocs_np1
+
+
 class VelVerletPropagator():
     #velocities are calculated as deltax/deltat (order del_t), Stormer-Verlet
     #this is done for simplicity
@@ -286,7 +308,7 @@ class ParticleGroup():
         return temperature
 
 
-    def update_coords_velocs(self,time_step,boundary_conditions='Open'):
+    def update_coords_velocs(self,time_step,boundary_conditions='open'):
         '''updates positions according to some algorithm,
         bounds are the boundary conditions, I will only support reflecting
         for the time being'''
@@ -340,16 +362,12 @@ class ParticleGroup():
             box_eps = 1e-2
             for j in range(3):
                 if exist_oob_gt[j]:
-                    self.coords[gt_indices[j],j] = self.box.hi[j] 
+                    self.coords[gt_indices[j],j] = self.box.hi[j]
                     self.velocs[gt_indices[j],j] *= -1
                 if exist_oob_lt[j]:
-                    self.coords[lt_indices[j],j] = self.box.lo[j] 
+                    self.coords[lt_indices[j],j] = self.box.lo[j]
                     self.velocs[lt_indices[j],j] *= -1
 
-
-
-
-       
 
 def read_velocities_from_xyz(input_path):
     velocs = []
