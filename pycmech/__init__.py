@@ -110,6 +110,13 @@ class LJPotential():
         vector_force = scalar_force[:,np.newaxis]*r_vec
         return vector_force
 
+class Box():
+    def __init__(self,xlo,xhi,ylo,yhi,zlo,zhi):
+        #simulation box, particles have boxes attached to them, perhaps its better
+        #to do it the other way round
+        self.lo = [xlo,ylo,zlo]
+        self.hi = [xhi,yhi,zhi]
+
 
 class ParticleGroup():
     def __init__(self,coords,velocs,masses,znumbers):
@@ -183,6 +190,13 @@ class ParticleGroup():
         self.propagator = propagator
 
 
+    def attach_box(self,xlo,xhi,ylo,yhi,zlo,zhi):
+        #box has to be an array with 6 elements that determine
+        #height, width, etc
+        self.box = Box(xlo,xhi,ylo,yhi,zlo,zhi)
+        
+
+
     def _build_neigh_list(self):
         dij = self._calc_pairwise_dist()
         neigh_matrix = np.asarray(dij < self.rcut)
@@ -245,14 +259,53 @@ class ParticleGroup():
         return temperature
 
 
-    def update_coords_velocs(self,time_step):
-        '''updates positions according to some algorithm'''
+    def update_coords_velocs(self,time_step,boundary_conditions='Open'):
+        '''updates positions according to some algorithm,
+        bounds are the boundary conditions, I will only support reflecting
+        for the time being'''
         #get new coordinates
         coords_np1, velocs_np1 = self.propagator.propagate(self,time_step)
         #update the coordinates
         self.coords_nm1 = self.coords
         self.coords = coords_np1
         self.velocs = velocs_np1
+
+        def exist_oob(indices):
+            exist=[]
+            for j in range(3):
+                exist.append(indices[j].shape[0] != 0)
+            return exist
+
+        def get_gt_indices(coordinates,hibounds):
+            def oob_gt(matrix,bound):
+                return (matrix > bound).nonzero()
+            gt_indices = []
+            for j in range(3):
+                gt_indices.append(oob_gt(coordinates[:,j],hibounds[j])[0])
+            return np.array(gt_indices)
+
+        def get_lt_indices(coordinates,lobounds):
+            def oob_lt(matrix,bound):
+                return (matrix < bound).nonzero()
+            lt_indices = []
+            for j in range(3):
+                lt_indices.append(oob_lt(coordinates[:,j],lobounds[j])[0])
+            return np.array(lt_indices)
+        
+        if boundary_conditions == 'reflecting':
+            gt_indices = get_gt_indices(self.coords,self.box.hi)
+            lt_indices = get_lt_indices(self.coords,self.box.lo)
+            exist_oob_gt = exist_oob(gt_indices)
+            exist_oob_lt = exist_oob(lt_indices)
+            for j in range(3):
+                if exist_oob_gt[j]:
+                    self.coords[gt_indices[j],j] = self.box.hi[j]
+                if exist_oob_lt[j]:
+                    self.coords[lt_indices[j],j] = self.box.lo[j]
+
+
+
+
        
 
 def read_velocities_from_xyz(input_path):
