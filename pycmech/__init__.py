@@ -292,16 +292,18 @@ class ParticleGroup():
                 lt_indices.append(oob_lt(coordinates[:,j],lobounds[j])[0])
             return np.array(lt_indices)
         
-        if boundary_conditions == 'reflecting':
+        if boundary_conditions == 'reflecting_fake':
+            #these are called reflecting fake since these are actually 
+            #unphysical boundary conditions
             gt_indices = get_gt_indices(self.coords,self.box.hi)
             lt_indices = get_lt_indices(self.coords,self.box.lo)
             exist_oob_gt = exist_oob(gt_indices)
             exist_oob_lt = exist_oob(lt_indices)
             for j in range(3):
                 if exist_oob_gt[j]:
-                    self.coords[gt_indices[j],j] = self.box.hi[j]
+                    self.coords[gt_indices[j],j] = self.box.hi[j]-0.2
                 if exist_oob_lt[j]:
-                    self.coords[lt_indices[j],j] = self.box.lo[j]
+                    self.coords[lt_indices[j],j] = self.box.lo[j]+0.2
 
 
 

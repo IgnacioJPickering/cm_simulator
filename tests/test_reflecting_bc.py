@@ -7,6 +7,7 @@ import pandas as pd
 from math import isclose
 
 reflecting_path =  './test_data/reflecting_simulation.xyz'
+#reflecting_path =  './test_data/big_refl_simulation.xyz'
 ar_path =  './test_data/argon_for_forces.xyz'
 water_path =  './test_data/water.xyz'
 h_path =  './test_data/atomic_h.xyz'
@@ -124,8 +125,8 @@ particles.coords = np.random.uniform(-9.,9.,(100,3))
 particles.attach_potential(cm.LJPotential(A=A_ar,B=B_ar,rcut=cut))
 particles.attach_propagator(cm.VerletPropagator(5.))
 particles.attach_box(-10.,10.,-10.,10.,-10.,10.)
-for j in range(1000):
-    particles.update_coords_velocs(j,'reflecting')
+for j in range(10000):
+    particles.update_coords_velocs(j,'reflecting_fake')
     with open("output_test.xyz","a") as myfile:
         myfile.write('100\n') 
         myfile.write(f'timestep {j}\n') 
