@@ -30,8 +30,11 @@ kbol = kbol_si*6.022e16
 
 
 class VerletPropagator():
+    #velocities are calculated as deltax/deltat (order del_t), Stormer-Verlet
+    #this is done for simplicity
     def __init__(self,del_t):
         self.del_t = del_t
+
 
     def _update_term(self,coords,masses,forces):
         return np.divide(forces,masses[:,np.newaxis])*(self.del_t**2)
@@ -95,6 +98,7 @@ class LJPotential():
         array_potential = self._lj_for_array(pair_list_wcutoff)
         sum_potential = np.sum(array_potential)
         return sum_potential
+
 
     def ff(self,d_vec,r_vec):
         #the force field calculates the total force over 1 particle
