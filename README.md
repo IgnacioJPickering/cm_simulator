@@ -1,5 +1,5 @@
 
-
+[![CodeFactor](https://www.codefactor.io/repository/github/ignaciojpickering/cm_simulator/badge)](https://www.codefactor.io/repository/github/ignaciojpickering/cm_simulator)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 # pycmech
