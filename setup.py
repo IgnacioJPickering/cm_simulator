@@ -1,5 +1,4 @@
 from setuptools import setup, find_packages
-import sys
 #print(find_packages())
 with open('README.md','r') as descfile:
     long_description = descfile.read()
@@ -12,7 +11,7 @@ setup_attrs = {
         'url':'https://github.com/IgnacioJPickering/cm_simulator/pycmech',
         'author':'Ignacio Pickering',
         'author_email':'ign.pickering@gmail.com',
-        'license':'GNU',
+        'license':'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'packages':find_packages(where='.'),
         'include_package_data':True,
         'install_requires':['numpy','matplotlib']
