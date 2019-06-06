@@ -1,8 +1,6 @@
-import sys
 import numpy as np
 import pycmech as cm
 import pytest
-import matplotlib.pyplot as plt
 from math import isclose
 
 ar_path = './test_data/argon_for_forces.xyz'
