@@ -71,7 +71,6 @@ class VelVerletPropagator():
     def propagate(self, particles, time_step):
         forces = particles.get_forces()
         coords = particles.coords
-        coords_nm1 = particles.coords_nm1
         masses = particles.masses
         velocs = particles.velocs
 
@@ -166,7 +165,7 @@ class LJPotential():
 
 class Box():
     def __init__(self, xlo, xhi, ylo, yhi, zlo, zhi):
-        #simulation box, particles have boxes attached to them, perhaps its better
+        #simulation box, parts have boxes attached to them, perhaps its better
         #to do it the other way round
         self.lo = [xlo, ylo, zlo]
         self.hi = [xhi, yhi, zhi]
@@ -357,7 +356,7 @@ class ParticleGroup():
             lt_indices = get_lt_indices(self.coords, self.box.lo)
             exist_oob_gt = exist_oob(gt_indices)
             exist_oob_lt = exist_oob(lt_indices)
-            box_eps = 1e-2
+            # box_eps = 1e-2
             for j in range(3):
                 if exist_oob_gt[j]:
                     self.coords[gt_indices[j], j] = self.box.hi[j]
@@ -399,9 +398,11 @@ def read_coordinates_from_xyz(input_path):
     with open(input_path) as myfile:
         for num, line in enumerate(myfile):
             if num == 0:
-                num_atoms = line
+                pass
+                # num_atoms = line
             if num == 1:
-                file_comment = line
+                pass
+                # file_comment = line
             if num > 1:
                 values = line.split()
                 elinput.append(values[0])
