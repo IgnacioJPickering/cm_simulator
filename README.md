@@ -1,4 +1,8 @@
-#pycmech
+
+
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
+# pycmech
 
 A super simple implementation of molecular dynamics of gases on python.
 The Verlet algorithm is used for propagation of coordinates.
