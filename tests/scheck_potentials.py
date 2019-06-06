@@ -1,7 +1,5 @@
-import sys
 import numpy as np
 import pycmech as cm
-import pytest
 import matplotlib.pyplot as plt
 water_path = './test_data/water.xyz'
 
